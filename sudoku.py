@@ -24,68 +24,127 @@ def printgraph(longvector):
     picture+=topandbottom
     print(picture)
 
-def insquare(number,squarenum,graph): #squarenum = range(9)     
+def isinsquare(number,squarenum,graph): #squarenum = range(9)    //if there is a place to insert number then insert it
     URC=(squarenum//3)*27+(squarenum%3)*3 #UpperRightCorner
+    countdots=0
+    lastindex=82
     for i in range(3):
-        for j in range(3):
-            if(graph[URC+(i*9)+j])==number:
-                return True
+        for j in range(3):                     # 0, 3, 6,
+            if(graph[URC+(i*9)+j])==number:    # 27, 30, 33,
+                return True                    # 54, 57, 60
+            if(graph[URC+(i*9)+j])=='.':
+                countdots+=1
+                lastindex=URC+(i*9)+j
+    if(countdots>1):#if there exists more than one place this number can be
+        return True
+    graph[lastindex]=number
     return False
 
-# 0, 3, 6,
-# 27, 30, 33,
-# 54, 57, 60
+def isinrow(number,rownum,graph): #rownum is range(9)
+    FRN = rownum*9 #First Row Number
+    countdots=0
+    lastindex=82
+    for i in range(9):
+        if(graph[FRN+i]==number):
+            return True
+        if(graph[FRN+i]=='.'):
+            countdots+=1
+            lastindex=FRN+i
+    if(countdots>1):
+        return True
+    graph[lastindex]=number
+    return False
 
-def inrow(number,rownum):
-    pass
+def isincol(number,colnum,graph): #colnum = range(9)
+    FCN = colnum #First Column Number
+    i=0
+    countdots=0
+    lastindex=82
+    while(i+FCN<81):
+        if(graph[i+FCN]==number):
+            return True
+        if(graph[i+FCN]=='.'):
+            countdots+=1
+            lastindex=FCN+i
+        i+=9
+    if(countdots>1):
+        return True
+    graph[lastindex]=number
+    return False
 
-def incol(number,colnum):
-    pass
+def insertdashhelper(i,graph):
+    colnum=i%9
+    rownum=i//9
+    squarenum=(i//27)*3+(i%9//3)
+    FRN = rownum*9
+    URC=(squarenum//3)*27+(squarenum%3)*3
+    j=0
+    while(j+colnum<81):
+        if graph[j+colnum]=='.':
+            graph[j+colnum]='-'
+        j+=9
+    for j in range(9):
+        if graph[j+FRN]=='.':
+            graph[j+FRN]='-'
+    for j in range(3):
+        for k in range(3):
+            if(graph[URC+(j*9)+k]=='.'):
+                graph[URC+(j*9)+k]='-'
+
+def insertdash(number,graph): #void function
+    didgraphchange=False
+    for i in range(len(graph)):
+        if graph[i]==number:
+            insertdashhelper(i,graph)
+    #isincol, isinrow, isinsquare
+    truth1=True
+    truth2=True
+    truth3=True
+    i=0
+    while i<len(graph):
+        if(graph[i]=='.'):
+            colnum=i%9
+            rownum=i//9
+            squarenum=(i//27)*3+(i%9//3)
+            truth1=isincol(number,colnum,graph) 
+            truth2=isinrow(number,rownum,graph)
+            truth3=isinsquare(number,squarenum,graph)
+            if(not truth1 or not truth2 or not truth3):
+                insertdashhelper(i,graph)
+                i=0
+                didgraphchange=True
+        i+=1
+    return didgraphchange
+
+def turnbackdots(graph):
+    for i in range(len(graph)):
+        if(graph[i]=='-'):
+            graph[i]='.'
 
 def solve(graph):
-    for numvalue in range(10):
-        pass
+    truth=False
+    numvalue=1
+    while numvalue < 10:
+        truth=insertdash(numvalue,graph)
+        turnbackdots(graph)
+        if(truth):
+            numvalue=0
+        numvalue+=1
 
 if __name__=="__main__":
-    #given a partially filled out graph of sudoku create a print out of the graph and steps
-    longvector=list('.')*81
-    longvector[0]=8
-    longvector[1]=7
-    longvector[2]=6
-    longvector[3]=9
-    longvector[10]=1
-    longvector[14]=6
-    longvector[19]=4
-    longvector[21]=3
-    longvector[23]=5
-    longvector[24]=8
-    longvector[27]=4
-    longvector[33]=2
-    longvector[34]=1
-    longvector[37]=9
-    longvector[39]=5
-    longvector[46]=5
-    longvector[49]=4
-    longvector[51]=3
-    longvector[53]=6
-    longvector[55]=2
-    longvector[56]=9
-    longvector[62]=8
-    longvector[65]=4
-    longvector[66]=6
-    longvector[67]=9
-    longvector[69]=1
-    longvector[70]=7
-    longvector[71]=3
-    longvector[77]=1
-    longvector[80]=4
-    printgraph(longvector)
-    print(insquare(1,0,longvector))
-    print(insquare(1,1,longvector))
-    print(insquare(1,2,longvector))
-    print(insquare(1,3,longvector))
-    print(insquare(1,4,longvector))
-    print(insquare(1,5,longvector))
-    print(insquare(1,6,longvector))
-    print(insquare(1,7,longvector))
-    print(insquare(1,8,longvector))
+    #given a partially filled out graph of sudoku print solution
+    if(len(sys.argv)!=2):
+        sys.exit("wrong number of arguments")
+    filename=sys.argv[1]
+    try:
+        file1 = open(filename,'r')
+        file1 = file1.read()
+        longvector=file1.split(',')
+        for i in range(len(longvector)):
+            if(longvector[i]>='0' and longvector[i]<='9'):
+                longvector[i]=int(longvector[i])
+        printgraph(longvector)
+        solve(longvector)
+        printgraph(longvector)
+    except:
+        sys.exit("file not found")
